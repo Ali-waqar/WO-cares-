@@ -1,0 +1,382 @@
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es7.symbol.async-iterator.js
+var es7_symbol_async_iterator = __webpack_require__("./node_modules/core-js/modules/es7.symbol.async-iterator.js");
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es6.symbol.js
+var es6_symbol = __webpack_require__("./node_modules/core-js/modules/es6.symbol.js");
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/web.dom.iterable.js
+var web_dom_iterable = __webpack_require__("./node_modules/core-js/modules/web.dom.iterable.js");
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es6.array.iterator.js
+var es6_array_iterator = __webpack_require__("./node_modules/core-js/modules/es6.array.iterator.js");
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es6.object.keys.js
+var es6_object_keys = __webpack_require__("./node_modules/core-js/modules/es6.object.keys.js");
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es6.regexp.to-string.js
+var es6_regexp_to_string = __webpack_require__("./node_modules/core-js/modules/es6.regexp.to-string.js");
+
+// EXTERNAL MODULE: ./button-widget/src/const.js
+var src_const = __webpack_require__("./button-widget/src/const.js");
+
+// CONCATENATED MODULE: ./button-widget/src/ButtonParser.js
+
+
+var ButtonParser_ButtonParser =
+/*#__PURE__*/
+function () {
+  function ButtonParser(logger) {
+    this.parse = this.parse.bind(this);
+    this.findButtons = this.findButtons.bind(this);
+    this.parseButtons = this.parseButtons.bind(this);
+    this.findRenderedButtons = this.findRenderedButtons.bind(this);
+    this.buttonTag = 'a';
+    this.buttonClass = 'elevensight-11button-v2';
+    this.buttonRenderedClass = src_const["RENDERED_BTN_CLASS"];
+    this.logger = logger;
+  }
+
+  var _proto = ButtonParser.prototype;
+
+  _proto.parse = function parse() {
+    var buttons = this.findButtons();
+    this.logger.log('Found buttons', buttons);
+    var btnObjects = this.parseButtons(buttons);
+    this.logger.log('Button Data Parsed', btnObjects);
+    return btnObjects;
+  };
+
+  _proto.findButtons = function findButtons() {
+    // This do not work for IE7- but I think it's not relevant anymore...
+    // return Array instead of NodeList
+    return [].slice.call(document.querySelectorAll(this.buttonTag + "." + this.buttonClass + ":not(." + this.buttonRenderedClass + ")"));
+  };
+
+  _proto.parseButtons = function parseButtons(buttons) {
+    var _this = this;
+
+    this.logger.log(buttons);
+    return buttons.reduce(function (accum, btn) {
+      _this.logger.log(btn);
+
+      var btnStyleHashId = btn.getAttribute('data-btn-style-hash-id');
+      accum[btnStyleHashId] = btn;
+      return accum;
+    }, {});
+  };
+
+  _proto.findRenderedButtons = function findRenderedButtons() {
+    return [].slice.call(document.querySelectorAll(this.buttonTag + "." + this.buttonClass + "." + this.buttonRenderedClass));
+  };
+
+  return ButtonParser;
+}();
+
+
+// EXTERNAL MODULE: ./button-widget/src/SimpleLogger.js
+var SimpleLogger = __webpack_require__("./button-widget/src/SimpleLogger.js");
+
+// EXTERNAL MODULE: ./button-widget/src/ButtonLauncher.js + 1 modules
+var ButtonLauncher = __webpack_require__("./button-widget/src/ButtonLauncher.js");
+
+// CONCATENATED MODULE: ./button-widget/src/App.js
+
+
+
+
+
+
+
+
+
+
+
+var App_App =
+/*#__PURE__*/
+function () {
+  function App() {
+    this.parseAndRenderButtons = this.parseAndRenderButtons.bind(this);
+    this.init = this.init.bind(this);
+    this.onMessage = this.onMessage.bind(this);
+    this.enableDebug = this.enableDebug.bind(this);
+    this.disableDebug = this.disableDebug.bind(this);
+    this.renderButtons = this.renderButtons.bind(this);
+    this.makeJsonpRequest = this.makeJsonpRequest.bind(this);
+    this.removeRenderedContent = this.removeRenderedContent.bind(this);
+    this.destroyButtons = this.destroyButtons.bind(this);
+    this._renderedLaunchers = {};
+    this.debugMode = false;
+    this.domain = src_const["DEFAULT_DOMAIN"];
+    this.logger = new SimpleLogger["SimpleLogger"]();
+  }
+
+  var _proto = App.prototype;
+
+  _proto.init = function init(_ref) {
+    var _this = this;
+
+    var domain = _ref.domain,
+        debug_mode = _ref.debug_mode,
+        delay = _ref.delay,
+        request_domain = _ref.request_domain,
+        force_show_form = _ref.force_show_form;
+    this.domain = domain;
+    this.debugMode = debug_mode;
+    this.parser = new ButtonParser_ButtonParser(this.logger);
+    this.delay = delay;
+    this.requestDomain = request_domain;
+    this.forceShowForm = force_show_form;
+
+    if (this.debugMode) {
+      this.enableDebug();
+    }
+
+    this._renderedLaunchers = {};
+    this._btnObjects = {};
+
+    if (delay && delay > 0) {
+      this.logger.log('Execution and parsing will be delay ' + delay.toString() + ' ms');
+      setTimeout(function () {
+        _this.parseAndRenderButtons();
+      }, delay);
+    } else {
+      this.logger.log('No delay received. Executing parsing and rendering');
+      this.parseAndRenderButtons();
+    }
+  };
+
+  _proto.destroyButtons = function destroyButtons() {
+    this.logger.log('Destroying existing buttons');
+    this._renderedLaunchers = {};
+    this._btnObjects = {};
+    this.removeRenderedContent();
+  };
+
+  _proto.reloadButtons = function reloadButtons() {
+    this.logger.log('Reloading buttons');
+    this.destroyButtons();
+    this.parseAndRenderButtons();
+  };
+
+  _proto.removeRenderedContent = function removeRenderedContent() {
+    this.logger.log('Removing rendered widget launchers');
+
+    for (var _iterator = document.querySelectorAll('.elevensight-widget-launcher'), _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[Symbol.iterator]();;) {
+      var _ref2;
+
+      if (_isArray) {
+        if (_i >= _iterator.length) break;
+        _ref2 = _iterator[_i++];
+      } else {
+        _i = _iterator.next();
+        if (_i.done) break;
+        _ref2 = _i.value;
+      }
+
+      var cnt = _ref2;
+      cnt.remove();
+    }
+
+    this.logger.log('Removing rendered class on existing buttons');
+
+    for (var _iterator2 = this.parser.findRenderedButtons(), _isArray2 = Array.isArray(_iterator2), _i2 = 0, _iterator2 = _isArray2 ? _iterator2 : _iterator2[Symbol.iterator]();;) {
+      var _ref3;
+
+      if (_isArray2) {
+        if (_i2 >= _iterator2.length) break;
+        _ref3 = _iterator2[_i2++];
+      } else {
+        _i2 = _iterator2.next();
+        if (_i2.done) break;
+        _ref3 = _i2.value;
+      }
+
+      var btn = _ref3;
+      btn.classList.remove(src_const["RENDERED_BTN_CLASS"]);
+    }
+  };
+
+  _proto.enableDebug = function enableDebug() {
+    this.debugMode = true;
+    this.logger.debugMode = true;
+  };
+
+  _proto.disableDebug = function disableDebug() {
+    this.debugMode = false;
+    this.logger.debugMode = false;
+  };
+
+  _proto.parseAndRenderButtons = function parseAndRenderButtons() {
+    this.logger.log('Starting parse and rendering');
+    this._btnObjects = this.parser.parse();
+    this.fetchButtonConfigs(this._btnObjects);
+  };
+
+  _proto.fetchButtonConfigs = function fetchButtonConfigs(btnObjects) {
+    var hostname = window.location.hostname;
+    var path = window.location.pathname;
+    var btnParamUrl = 'hostname=' + encodeURIComponent(hostname) + '&pathname=' + encodeURIComponent(path);
+
+    if (this.forceShowForm) {
+      btnParamUrl += '&f=1';
+    }
+
+    var _arr = Object.keys(btnObjects);
+
+    for (var _i3 = 0; _i3 < _arr.length; _i3++) {
+      var btnStyleHashId = _arr[_i3];
+      this.logger.log(btnStyleHashId, btnObjects[btnStyleHashId]);
+      btnParamUrl += '&b[]=' + btnStyleHashId; // Find other data elements if there are any...
+
+      var btn = btnObjects[btnStyleHashId];
+
+      if (Object.keys(btn.dataset).length > 1) {
+        var prmString = "";
+
+        for (var k in btn.dataset) {
+          if ("btnStyleHashId" === k) {
+            continue;
+          }
+
+          prmString += "&v[" + btnStyleHashId + "][" + k + "]=" + encodeURIComponent(btn.dataset[k]);
+        }
+
+        btnParamUrl += prmString;
+      }
+    }
+
+    this.logger.log('Jsonp request params created', btnParamUrl);
+    var requestUrl = this.domain + '/btn_config.js?' + btnParamUrl;
+    this.makeJsonpRequest(requestUrl);
+  };
+
+  _proto.makeJsonpRequest = function makeJsonpRequest(url) {
+    var buttonDataScriptTagIdBase = 'elevenSightButtonWidgetData_';
+    var buttonDataScriptTagId; // Run at most 10 times...
+
+    var i = 0;
+
+    do {
+      if (i > 10) {
+        this.logger.log('Id generation failed to generate a unique id. Exiting to prevent infinite loop');
+        break;
+      }
+
+      i += 1;
+      buttonDataScriptTagId = buttonDataScriptTagIdBase + Math.floor(Math.random() * 1000000);
+    } while (document.getElementById(buttonDataScriptTagId) != undefined);
+
+    var js;
+    var fjs = document.getElementsByTagName('script')[0];
+    js = document.createElement('script');
+    js.id = buttonDataScriptTagId;
+    js.src = url;
+    fjs.parentNode.insertBefore(js, fjs);
+  };
+
+  _proto.renderButtons = function renderButtons(btnConfigs) {
+    if (!btnConfigs) {
+      this.logger.log("Btn Config is not available. Ignoring rendering");
+      return;
+    }
+
+    var self = this;
+    this.logger.log('Rendering btns: ', btnConfigs);
+
+    var _arr2 = Object.keys(btnConfigs);
+
+    for (var _i4 = 0; _i4 < _arr2.length; _i4++) {
+      var btnStyleHashId = _arr2[_i4];
+      var c = btnConfigs[btnStyleHashId];
+      var l = new ButtonLauncher["default"](this._btnObjects[c.id], this.logger);
+      l.init(c);
+      self._renderedLaunchers[c.id] = {
+        launcher: l,
+        config: c,
+        domObject: this._btnObjects[c.id]
+      }; // Mark button as rendered
+
+      this._btnObjects[c.id].classList.add(src_const["RENDERED_BTN_CLASS"]);
+    }
+  };
+
+  _proto.onMessage = function onMessage(event) {
+    this.logger.log('iframe message received: ', event); // Check sender origin to be trusted
+
+    if (event.origin !== this.domain) {
+      return;
+    } // Check if the received message is of type iisight...
+
+
+    if (event.data && event.data.mType && event.data.mType === 'iisight') {
+      var msg = event.data.message;
+      var btnIndex = event.data.btnIndex;
+      this.logger.log('iframe message received: ', msg, btnIndex);
+
+      if (this._renderedLaunchers[btnIndex]) {
+        if ('toggleWidget' === msg) {
+          this._renderedLaunchers[btnIndex].launcher.clicked();
+        }
+
+        if ('resizeHeight' === msg) {
+          this._renderedLaunchers[btnIndex].launcher.resizeWidget(event.data.newHeight);
+        }
+
+        if ('gaEvent' === msg) {
+          this._renderedLaunchers[btnIndex].launcher.recordEvent(event.data.gaEventName);
+        }
+      } else {
+        this.logger.log('Button Index: ' + btnIndex + ' do not have a valid rendered launcher');
+      }
+    }
+  };
+
+  return App;
+}();
+
+
+// CONCATENATED MODULE: ./button-widget/main.js
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return main_AppStarter; });
+
+
+
+
+
+var main_AppStarter =
+/*#__PURE__*/
+function () {
+  function AppStarter() {}
+
+  AppStarter.start = function start(ctx) {
+    ctx.elevensightApp = new App_App();
+
+    for (var _iterator = ctx.elevensight.queue, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[Symbol.iterator]();;) {
+      var _ref;
+
+      if (_isArray) {
+        if (_i >= _iterator.length) break;
+        _ref = _iterator[_i++];
+      } else {
+        _i = _iterator.next();
+        if (_i.done) break;
+        _ref = _i.value;
+      }
+
+      var args = _ref;
+      ctx.elevensightApp[args[0]].call(null, args[1]);
+    }
+
+    if (ctx.addEventListener) {
+      ctx.addEventListener('message', ctx.elevensightApp.onMessage, false);
+    } else if (ctx.attachEvent) {
+      ctx.attachEvent('onmessage', ctx.elevensightApp.onMessage, false);
+    }
+  };
+
+  return AppStarter;
+}();
+
+
+
+//# sourceURL=webpack://ElevenButtonManager/./button-widget/main.js_+_2_modules?

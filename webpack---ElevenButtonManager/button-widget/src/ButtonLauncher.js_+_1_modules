@@ -1,0 +1,596 @@
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es6.object.assign.js
+var es6_object_assign = __webpack_require__("./node_modules/core-js/modules/es6.object.assign.js");
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es6.regexp.to-string.js
+var es6_regexp_to_string = __webpack_require__("./node_modules/core-js/modules/es6.regexp.to-string.js");
+
+// EXTERNAL MODULE: ./button-widget/src/const.js
+var src_const = __webpack_require__("./button-widget/src/const.js");
+
+// EXTERNAL MODULE: ./button-widget/button-styles.js
+var button_styles = __webpack_require__("./button-widget/button-styles.js");
+
+// CONCATENATED MODULE: ./button-widget/src/Widget.js
+
+
+
+
+
+var Widget_Widget =
+/*#__PURE__*/
+function () {
+  function Widget(logger) {
+    this.logger = logger;
+    this.config = this.config.bind(this);
+    this.toggle = this.toggle.bind(this);
+    this.containerBox = this.containerBox.bind(this);
+    this.displayWidget = false;
+    this.baseContainerId = 'elevensight-container';
+    this.baseFrameId = 'elevensight-frame';
+    this.containerId = '';
+    this.frameId = '';
+    this.id = null;
+    this.frameContainer = null;
+    this.frame = null;
+    this.mainColor = null;
+  }
+
+  var _proto = Widget.prototype;
+
+  _proto.config = function config(_ref) {
+    var id = _ref.id,
+        container = _ref.container,
+        messengerUrl = _ref.messengerUrl,
+        minHeight = _ref.minHeight,
+        position = _ref.position,
+        mainColor = _ref.mainColor;
+    this.id = id;
+    this.messengerUrl = messengerUrl;
+    this.minHeight = minHeight;
+    this.position = position || src_const["POS_BTM_RIGHT"];
+    this.container = container;
+    this.containerId = this.baseContainerId + '-' + this.id;
+    this.frameId = this.frameId + '-' + this.id;
+    this.mainColor = mainColor;
+    this.styles = Object(button_styles["buttonStyles"])(this.mainColor);
+  };
+
+  _proto.containerBox = function containerBox() {
+    return this.frameContainer;
+  };
+
+  _proto.resize = function resize(newHeight) {
+    this.frameContainer.style.height = newHeight.toString() + 'px';
+    this.frame.style.height = (newHeight - 20).toString() + 'px';
+  };
+
+  _proto.reposition = function reposition() {
+    if (src_const["POS_BTM_MIDDLE"] === this.position) {
+      var containerWidth = this.container.getBoundingClientRect().width;
+      var frameWidth = this.frameContainer.getBoundingClientRect().width;
+      var newWidth = parseInt((containerWidth - frameWidth) / 2);
+      this.logger.log('repositioning frame to middle', containerWidth, frameWidth, newWidth);
+      this.frameContainer.style.left = newWidth + "px";
+    }
+  };
+
+  _proto.toggle = function toggle() {
+    var _this = this;
+
+    var self = this;
+    this.displayWidget = !this.displayWidget;
+    this.frameContainer = document.getElementById(this.containerId);
+
+    if (this.displayWidget) {
+      // display
+      if (this.frameContainer) {
+        this.frameContainer.style.display = 'block';
+      } else {
+        // create frame object
+        this.frameContainer = document.createElement('div');
+        var positionStyle = 'inline';
+
+        if (src_const["POS_BTM_RIGHT"] === this.position) {
+          positionStyle = 'br';
+        } else if (src_const["POS_BTM_LEFT"] === this.position) {
+          positionStyle = 'bl';
+        } else if (src_const["POS_TOP_RIGHT"] === this.position) {
+          positionStyle = 'tr';
+        } else if (src_const["POS_TOP_LEFT"] === this.position) {
+          positionStyle = 'tl';
+        } else if (src_const["POS_BTM_MIDDLE"] === this.position) {
+          positionStyle = 'bm';
+        }
+
+        var baseOuterFrameClass = 'elevensight-outer-frame';
+        var baseInnerFrameClass = 'elevensight-inner-frame';
+        var outerFrameStyles = [baseOuterFrameClass, baseOuterFrameClass + '--' + positionStyle].map(function (v) {
+          return _this.styles[v];
+        });
+        outerFrameStyles.push({
+          width: src_const["BTN_WIDTH"].toString() + 'px',
+          maxWidth: src_const["BTN_WIDTH"].toString() + 'px',
+          height: this.minHeight.toString() + 'px',
+          borderColor: this.mainColor
+        });
+        var innerFrameStyles = [baseInnerFrameClass, baseInnerFrameClass + '--' + positionStyle].map(function (v) {
+          return _this.styles[v];
+        });
+        innerFrameStyles.push({
+          height: (this.minHeight - 20).toString() + 'px',
+          width: src_const["BTN_WIDTH"].toString() + 'px'
+        });
+        this.logger.log('outer frame styles: ', outerFrameStyles);
+        Object.assign.apply(Object, [this.frameContainer.style].concat(outerFrameStyles));
+        this.frameContainer.id = this.containerId;
+        this.frame = document.createElement('iframe');
+        this.frame.src = this.messengerUrl;
+        this.frame.id = this.frameId;
+        Object.assign.apply(Object, [this.frame.style].concat(innerFrameStyles));
+        this.frameContainer.appendChild(this.frame);
+        this.container.appendChild(this.frameContainer);
+
+        window.onresize = function () {
+          self.reposition();
+        };
+      }
+
+      this.reposition();
+    } else if (this.frameContainer) {
+      this.frameContainer.style.display = 'none';
+    }
+  };
+
+  return Widget;
+}();
+
+
+// CONCATENATED MODULE: ./button-widget/src/ButtonLauncher.js
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return ButtonLauncher_ButtonLauncher; });
+
+
+
+
+
+var ButtonLauncher_ButtonLauncher =
+/*#__PURE__*/
+function () {
+  function ButtonLauncher(container, logger, autoRender) {
+    if (autoRender === void 0) {
+      autoRender = true;
+    }
+
+    this.init = this.init.bind(this);
+    this.buildLauncher = this.buildLauncher.bind(this);
+    this.buildWidget = this.buildWidget.bind(this);
+    this.renderLauncher = this.renderLauncher.bind(this);
+    this.clicked = this.clicked.bind(this);
+    this.isExpanded = this.isExpanded.bind(this);
+    this.toggle = this.toggle.bind(this);
+    this.resize = this.resize.bind(this);
+    this.resizeWidget = this.resizeWidget.bind(this);
+    this.recordEvent = this.recordEvent.bind(this);
+    this.autoRender = autoRender;
+    this.container = container;
+    this.logger = logger;
+  }
+
+  var _proto = ButtonLauncher.prototype;
+
+  _proto.init = function init(_ref) {
+    var _this = this;
+
+    var id = _ref.id,
+        text = _ref.text,
+        domain = _ref.domain,
+        messenger_url = _ref.messenger_url,
+        call_btns_height = _ref.call_btns_height,
+        user_btns_height = _ref.user_btns_height,
+        position = _ref.position,
+        is_expandable = _ref.is_expandable,
+        call_url = _ref.call_url,
+        style = _ref.style,
+        super_btn_enabled = _ref.super_btn_enabled,
+        img_btn_over = _ref.img_btn_over,
+        expands_on_hover = _ref.expands_on_hover,
+        render_delay = _ref.render_delay,
+        main_color = _ref.main_color,
+        analytics = _ref.analytics,
+        rollup_buttons = _ref.rollup_buttons,
+        is_chat_only = _ref.is_chat_only;
+    this.id = id;
+    this.text = text || 'Call us!';
+    this.domain = domain || src_const["DEFAULT_DOMAIN"];
+    this.messengerUrl = messenger_url || this.domain + "/messenger_embed.html?b=" + this.id;
+    this.minHeight = super_btn_enabled ? user_btns_height : call_btns_height;
+    this.position = position || src_const["POS_BTM_RIGHT"];
+    this.isExpandable = is_expandable;
+    this.callUrl = call_url || this.domain + "/call?button_id=" + this.id;
+    this.style = style;
+    this.imgBtnOver = img_btn_over;
+    this.imgBtnOverSize = 90;
+    this.expandsOnHover = expands_on_hover || false;
+    this.renderDelay = render_delay;
+    this.mainColor = main_color || Object(button_styles["defaultMainColor"])();
+    this.analytics = {
+      ga: analytics && analytics.ga
+    };
+    this.rollupButtons = rollup_buttons;
+    this.isChatOnly = is_chat_only;
+    this.styles = Object(button_styles["buttonStyles"])(this.mainColor);
+    var self = this;
+
+    if (main_color) {
+      this.logger.log('Different main color is defined as: ' + main_color);
+    }
+
+    if (this.analytics.ga) {
+      this.logger.log('Google Analytics is enabled for: ' + this.id);
+    }
+
+    this.displayLauncher = true;
+    this.widget = this.buildWidget();
+    this.launcher = this.buildLauncher();
+
+    if (this.autoRender) {
+      if (this.renderDelay > 0) {
+        this.logger.log('Rendering is delayed by ' + this.renderDelay + ' seconds');
+        setTimeout(function () {
+          _this.renderLauncher();
+
+          _this.recordEvent(src_const["GA_EVT_VIEW"]);
+        }, this.renderDelay * 1000);
+      } else {
+        this.logger.log('Button wil be rendered without delay');
+        this.renderLauncher();
+        this.recordEvent(src_const["GA_EVT_VIEW"]);
+      }
+    }
+
+    window.onresize = function () {
+      self.reposition();
+    };
+  };
+
+  _proto.getMaxRollupState = function getMaxRollupState() {
+    if (!this.isExpandable) {
+      if (this.isChatOnly) {
+        return 'chat';
+      }
+
+      return 'video';
+    }
+
+    var current = 'chat';
+
+    for (var i in this.rollupButtons['default_btns']) {
+      var rb = this.rollupButtons['default_btns'][i];
+
+      if (rb['icon'] === 'video') {
+        current = 'video';
+        break;
+      } else if (rb['icon'] === 'audio') {
+        current = 'audio';
+      }
+    }
+
+    return current;
+  };
+
+  _proto.buildLauncher = function buildLauncher() {
+    var _this2 = this;
+
+    var launcher = document.createElement('div');
+    var icon = document.createElement('span');
+    var text = document.createElement('span');
+    text.className = 'iictrl-text';
+    launcher.title = this.text;
+
+    if (this.imgBtnOver) {
+      var imgContainer = document.createElement('div');
+      imgContainer.style = 'position: relative;';
+      var img = document.createElement('img');
+      img.id = 'eleventsight-img-btn-over-' + this.id;
+      img.src = this.imgBtnOver;
+      Object.assign(img.style, this.styles['elevensight-img-btn-over']);
+
+      if (src_const["STL_DARK"] === this.style) {
+        Object.assign(img.style, this.styles['elevensight-img-btn-over--dark']);
+      }
+
+      imgContainer.appendChild(img);
+      launcher.appendChild(imgContainer);
+    }
+
+    var styleExtension = 'light';
+    var viewBox = '5 0 49 49';
+    var iconStyle = 'fill: ' + this.mainColor + ';';
+
+    if (src_const["STL_LIGHT"] === this.style) {
+      styleExtension = 'light';
+      launcher.appendChild(icon);
+      launcher.appendChild(text);
+      iconStyle = 'fill: white;';
+      viewBox = '-2 0 49 49';
+    } else if (src_const["STL_SQUARE"] === this.style) {
+      var separator = document.createElement('div');
+      Object.assign(separator.style, this.styles['elevensight-launcher--square-separator']);
+      styleExtension = 'square';
+      launcher.appendChild(text);
+      launcher.appendChild(separator);
+      launcher.appendChild(icon);
+      viewBox = '15 16 18 18';
+    } else if (src_const["STL_DARK"] === this.style) {
+      styleExtension = 'dark';
+      launcher.appendChild(text);
+      launcher.appendChild(icon);
+      viewBox = '-2 0 49 49';
+    } else if (src_const["STL_GRADIENT"] === this.style) {
+      styleExtension = 'gradient';
+      launcher.appendChild(text);
+      launcher.appendChild(icon);
+      viewBox = '-5 0 49 49';
+    } else if (src_const["STL_ROUNDED"] === this.style) {
+      styleExtension = 'rounded';
+      launcher.appendChild(text);
+      launcher.appendChild(icon);
+      viewBox = '5 0 49 49';
+      iconStyle = 'fill: white; margin: 0 6px 10px 6px;';
+    }
+
+    var currentIcon = this.getMaxRollupState();
+    var iconSvg = document.createElement('svg');
+    icon.appendChild(iconSvg);
+
+    switch (currentIcon) {
+      case 'audio':
+        iconSvg.outerHTML = '<svg title="' + this.text + '" style="' + iconStyle + '" id="icon-audio" viewBox="1 0 49 49" width="100%" height="100%"><path fill="svg-currentColor" d="M14.0205094,16.2790122 C13.8498187,15.0940906 14.7662057,14.0298406 15.9633419,14.0192465 L18.1213887,14.0000763 C19.0220673,13.9922064 19.8132878,14.5937478 20.0461115,15.4631679 L21.1915202,19.7368158 C21.2029263,19.7788894 21.2150327,19.8201558 21.232542,19.8599088 C21.2990774,20.0136742 21.4842758,20.7459767 20.216402,22.6752073 C19.7991803,23.3102462 19.7793698,24.1287138 20.1716782,24.7785843 C20.6991586,25.6515357 21.565619,26.9155596 22.8031767,28.1967358 C24.0845576,29.4344259 25.3484293,30.3013236 26.2214932,30.828202 C26.8710384,31.2206871 27.6897735,31.2009115 28.324811,30.7837069 C30.2540362,29.5156471 30.9864254,29.700892 31.1402071,29.7675842 C31.1799282,29.7848374 31.2211501,29.7972476 31.2633726,29.8084471 L35.5371437,30.9539183 C36.4066057,31.186887 37.0079253,31.9784153 36.999921,32.8785077 L36.9809109,35.0366712 C36.9705054,36.2338011 35.9057396,37.1504405 34.7212101,36.9794219 C28.2276593,36.0437132 23.7391741,33.4694551 20.6353246,30.3650898 C17.5309749,27.2616326 14.956807,22.7729755 14.0205094,16.2790122 Z"></path></svg>';
+        break;
+
+      case 'chat':
+        iconSvg.outerHTML = '<svg title="' + this.text + '" style="' + iconStyle + '" id="icon-chat" viewBox="1 0 49 49" width="100%" height="100%"><path fill="svg-currentColor" d="M29.7231098,35.4691847 L24.5382275,35.4691847 C23.8314996,35.4691847 23.2817031,34.9059983 23.2817031,34.1818156 L23.2817031,32.5280553 L33.2725499,32.5280553 C33.9818137,32.5250554 34.5286842,31.9228699 34.5286842,31.2406862 L34.5286842,21.6469165 L36.7437682,21.6469165 C37.4504961,21.6469165 38,22.210103 38,22.9341856 L38,34.1818156 C38,34.8622993 37.4560555,35.4630849 36.7437682,35.4691847 L33.985325,35.4691847 L33.985325,39 L29.7231098,35.4691847 Z M17.7856888,31.0574906 L13.2563294,31.0574906 C12.5496014,31.0574906 12,30.4943041 12,29.7701215 L12,15.2873691 C12,14.5631865 12.5496014,14 13.2563294,14 L31.8262253,14 C32.5329532,14 33.0823596,14.5631865 33.0823596,15.2873691 L33.0823596,29.7701215 C33.0823596,30.4523051 32.5356841,31.0544907 31.8262253,31.0574906 L22.3434306,31.0574906 L17.7856888,35.1765918 L17.7856888,31.0574906 Z"></path></svg>';
+        break;
+
+      default:
+        iconSvg.outerHTML = '<svg title="' + this.text + '" style="' + iconStyle + '" id="icon-video" viewBox="' + viewBox + '" width="100%" height="100%"><path fill="svg-currentColor" d="M30.2001228,33 L11.2800221,33 C10.560165,33 10,32.4387117 10,31.7169698 L10,17.2830302 C10,16.5612883 10.560165,16 11.2800221,16 L30.2001228,16 C30.9201787,16 31.4801449,16.5612883 31.4801449,17.2830302 L31.4801449,31.7169698 C31.4801449,32.3973525 30.9222656,32.9977078 30.2001228,33 Z M37.0803039,30.5141665 L33.2400388,28.3491403 C33.0401005,28.22885 32.9202568,28.0283329 32.9202568,27.7877523 L32.9202568,21.2122477 C32.9202568,20.9716671 33.0401005,20.7712497 33.2400388,20.6509594 L37.0803039,18.4858335 C37.4801804,18.2453526 38,18.5659606 38,19.0471219 L38,29.9929417 C38,30.4339397 37.4801804,30.7547471 37.0803039,30.5141665 Z"></path></svg>';
+        break;
+    }
+
+    launcher.id = 'elevensight-widget-launcher-' + this.id;
+    launcher.classList.add('elevensight-widget-launcher');
+    var positionExtension = 'inline';
+
+    if (src_const["POS_BTM_RIGHT"] === this.position) {
+      positionExtension = 'br';
+    } else if (src_const["POS_BTM_LEFT"] === this.position) {
+      positionExtension = 'bl';
+    } else if (src_const["POS_TOP_RIGHT"] === this.position) {
+      positionExtension = 'tr';
+    } else if (src_const["POS_TOP_LEFT"] === this.position) {
+      positionExtension = 'tl';
+    } else if (src_const["POS_BTM_MIDDLE"] === this.position) {
+      positionExtension = 'bm'; // eslint-disable-next-line no-empty
+    } else if (src_const["POS_INLINE"] === this.position) {}
+
+    var baseLauncherClass = 'elevensight-launcher';
+    Object.assign.apply(Object, [launcher.style].concat([baseLauncherClass, baseLauncherClass + '--' + styleExtension, baseLauncherClass + '--' + positionExtension].map(function (v) {
+      return _this2.styles[v];
+    })));
+    Object.assign.apply(Object, [icon.style].concat([baseLauncherClass + '-icon', baseLauncherClass + '-icon--' + styleExtension].map(function (v) {
+      return _this2.styles[v];
+    })));
+    Object.assign.apply(Object, [text.style].concat([baseLauncherClass + '-text', baseLauncherClass + '-text--' + styleExtension].map(function (v) {
+      return _this2.styles[v];
+    })));
+    text.innerText = this.text;
+    return launcher;
+  };
+
+  _proto.resize = function resize(launcher) {
+    if (src_const["POS_INLINE"] === this.position) {
+      var text = launcher.querySelector('.iictrl-text');
+      var offsetWidthBasedOnStyle = 82;
+
+      if (src_const["STL_SQUARE"] === this.style) {
+        offsetWidthBasedOnStyle = 85;
+      } else if (src_const["STL_DARK"] === this.style) {
+        offsetWidthBasedOnStyle = 96;
+      } else if (src_const["STL_GRADIENT"] === this.style) {
+        offsetWidthBasedOnStyle = 90;
+      } else if (src_const["STL_ROUNDED"] === this.style) {
+        offsetWidthBasedOnStyle = 90;
+      }
+
+      var width = parseInt(text.getBoundingClientRect().width, 10) + 20 + offsetWidthBasedOnStyle;
+      this.logger.log('Dynamic width final calculation: ', width, ' offset width: ', offsetWidthBasedOnStyle);
+      Object.assign(launcher.style, {
+        width: width + 'px'
+      });
+    } // Reposition the above btn image if there is something like that.
+
+
+    if (this.imgBtnOver) {
+      this.logger.log('Found img btn over, resizing');
+      var img = launcher.querySelector('#eleventsight-img-btn-over-' + this.id);
+
+      var _width = parseInt(launcher.getBoundingClientRect().width, 10);
+
+      if (img) {
+        this.logger.log('Found img dom object', _width, this.imgBtnOverSize);
+        Object.assign(img.style, {
+          left: (_width - this.imgBtnOverSize) / 2 + 'px'
+        });
+      }
+    }
+  };
+
+  _proto.reposition = function reposition() {
+    if (src_const["POS_BTM_MIDDLE"] === this.position) {
+      // TODO: Later we might need to change this to use this.container instead of body directly...
+      var containerWidth = document.body.getBoundingClientRect().width;
+      var frameWidth = this.launcher.getBoundingClientRect().width;
+      var newWidth = parseInt((containerWidth - frameWidth) / 2);
+      this.logger.log('repositioning launcher to middle', containerWidth, frameWidth, newWidth);
+      this.launcher.style.left = newWidth + "px";
+    }
+  };
+
+  _proto.clicked = function clicked() {
+    if (this.isExpandable && null !== this.widget) {
+      this.toggle();
+      this.widget.toggle();
+    } else {
+      this.recordEvent(src_const["GA_EVT_VIDEO_CALL_START"]);
+      window.open(this.callUrl, '_blank');
+    }
+
+    this.reposition();
+  };
+
+  _proto.recordEvent = function recordEvent(event) {
+    this.logger.log('Record event received: ' + event + ' for id: ' + this.id);
+
+    if (this.analytics.ga) {
+      var prefixes = window.ANALYTICS_GA_PREFIXES;
+
+      if (window.gtag) {
+        this.logger.log('Gtag is being used instead of ga function');
+        window.gtag("event", event, {
+          event_category: "11Sight",
+          event_label: this.id
+        });
+      } else if (window.ga) {
+        for (var i in prefixes) {
+          var p = prefixes[i];
+          var m = "send";
+
+          if ("" !== p) {
+            m = p + "." + m;
+          }
+
+          window.ga(m, 'event', '11Sight', event, this.id);
+        }
+      } else {
+        this.logger.error('GA is enabled but ga function is not found');
+      }
+    } else {
+      this.logger.log('GA is not enabled');
+    }
+  };
+
+  _proto.toggle = function toggle() {
+    this.displayLauncher = !this.displayLauncher;
+
+    if (this.displayLauncher) {
+      this.launcher.style.display = 'block';
+
+      if (src_const["POS_INLINE"] === this.position) {
+        this.container.style.width = null;
+      }
+
+      this.recordEvent(src_const["GA_EVT_ROLLUP_CLOSE"]);
+    } else {
+      this.launcher.style.display = 'none'; // If we are hiding the launcher means, we are showing the rollup...
+
+      this.logger.log(this.container, this.position);
+
+      if (src_const["POS_INLINE"] === this.position) {
+        this.container.style.width = src_const["BTN_WIDTH"] + 'px';
+      }
+
+      this.recordEvent(src_const["GA_EVT_ROLLUP_OPEN"]);
+    }
+  };
+
+  _proto.isExpanded = function isExpanded() {
+    return this.isExpandable && null !== this.widget && this.widget.displayWidget;
+  };
+
+  _proto.setInlinePosition = function setInlinePosition(container) {
+    // Reset container's styles like border, padding, margin...
+    Object.assign(container.style, {
+      display: 'inline-block',
+      textDecoration: 'none',
+      border: 0,
+      padding: 0,
+      margin: 0,
+      // set the z-index as well so that it always be on top
+      // FIXME: maybe not for inline?
+      zIndex: '100000',
+      boxShadow: 'none',
+      whiteSpace: 'nowrap'
+    });
+  };
+
+  _proto.renderLauncher = function renderLauncher() {
+    var _this3 = this;
+
+    var container = document.body;
+
+    if (src_const["POS_INLINE"] === this.position) {
+      container = this.container;
+      this.setInlinePosition(container);
+    }
+
+    container.appendChild(this.launcher);
+    this.resize(this.launcher);
+    this.reposition();
+    this.launcher.addEventListener('click', function () {
+      _this3.logger.log('Launcher clicked', _this3.id);
+
+      _this3.clicked();
+    });
+
+    if (this.isExpandable && this.expandsOnHover) {
+      var handleClose = function handleClose() {
+        if (_this3.isExpanded()) {
+          _this3.logger.log('Widget out', _this3.id);
+
+          _this3.clicked();
+        }
+      };
+
+      var handleOpen = function handleOpen() {
+        if (!_this3.isExpanded()) {
+          _this3.logger.log('Launcher over', _this3.id);
+
+          _this3.clicked();
+
+          _this3.widget.containerBox().removeEventListener('mouseout', handleClose);
+
+          _this3.widget.containerBox().addEventListener('mouseout', handleClose);
+        }
+      };
+
+      this.launcher.addEventListener('mouseover', handleOpen);
+    }
+  };
+
+  _proto.resizeWidget = function resizeWidget(newHeight) {
+    this.widget.resize(newHeight);
+  };
+
+  _proto.buildWidget = function buildWidget() {
+    if (this.isExpandable) {
+      var widget = new Widget_Widget(this.logger);
+      widget.config({
+        id: this.id,
+        messengerUrl: this.messengerUrl,
+        minHeight: this.minHeight,
+        position: this.position,
+        container: src_const["POS_INLINE"] === this.position ? this.container : document.body,
+        mainColor: this.mainColor
+      });
+      return widget;
+    }
+
+    return null;
+  };
+
+  return ButtonLauncher;
+}();
+
+
+
+//# sourceURL=webpack://ElevenButtonManager/./button-widget/src/ButtonLauncher.js_+_1_modules?
